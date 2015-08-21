@@ -29,7 +29,7 @@ public class GameControl : MonoBehaviour {
 	public int delay;
 	public GameObject tagModel,linkModel;
 	public int result ;
-	public AudioSource dealSound,cardSound,winSound,loseSound,bonusSound;
+	public AudioSource dealSound,cardSound,winSound,loseSound,bonusSound,chipSound;
 	public WWW www1,www2;
 	public bool fadeDone;
 	public Dictionary<string, int> size;
@@ -56,6 +56,7 @@ public class GameControl : MonoBehaviour {
 		winSound = audios[2];
 		loseSound = audios[3];
 		bonusSound = audios[4];
+		chipSound = audios [5];
 
 		playerSum = GameObject.Find("PlayerSum");
 		computerSum = GameObject.Find("ComputerSum");
@@ -145,6 +146,7 @@ public class GameControl : MonoBehaviour {
 
 	public void HalfBet()
 	{
+		chipSound.Play ();
 		if ((betCoin / 2f) >= 1000)
 			betCoin = Mathf.FloorToInt (betCoin / 2000f) * 1000;
 		else if ((betCoin / 2f) >= 100)
@@ -159,7 +161,7 @@ public class GameControl : MonoBehaviour {
 
 	public void DoubleBet()
 	{
-
+		chipSound.Play ();
 		if (betCoin * 2 >= totalCoin || betCoin >= 99999 )
 			betCoin = Mathf.Min(totalCoin, 99999);
 		else if ((betCoin * 2) >= 1000)
