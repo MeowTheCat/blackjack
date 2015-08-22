@@ -29,7 +29,7 @@ public class GameControl : MonoBehaviour {
 	public int delay;
 	public GameObject tagModel,linkModel;
 	public int result ;
-	public AudioSource dealSound,cardSound,winSound,loseSound,bonusSound,chipSound;
+	public AudioSource dealSound,cardSound,winSound,loseSound,bonusSound,chipSound,meowSound;
 	public WWW www1,www2;
 	public bool fadeDone;
 	public Dictionary<string, int> size;
@@ -55,9 +55,10 @@ public class GameControl : MonoBehaviour {
 		dealSound = audios[0];
 		cardSound = audios[1];
 		winSound = audios[2];
-		loseSound = audios[3];
+		meowSound = audios[3];
 		bonusSound = audios[4];
 		chipSound = audios [5];
+		loseSound = audios [6];
 
 		playerSum = GameObject.Find("PlayerSum");
 		computerSum = GameObject.Find("ComputerSum");
@@ -124,11 +125,13 @@ public class GameControl : MonoBehaviour {
 			Debug.Log (pair.Key);
 		}
 		if(size["XS"] * size["S"] * size["M"]* size["L"] * size["XL"]== 0 && (size["XS"] + size["S"] + size["M"] + size["L"] + size["XL"]) > 0  ) sizeMenu.SetActive (false);
+	}
 
+
+	void Start()
+	{
 		bonusDate = PlayerPrefs.GetString("bonusdate", "");
 		if (bonusDate != System.DateTime.Now.ToString("MM/dd/yyyy"))  StartCoroutine(DailyBonus());
-
-		
 	}
 
 	public void ToggleMenu()
@@ -628,7 +631,7 @@ public class GameControl : MonoBehaviour {
 		if (i == -1)
 		{
 			loseSound.Play ();
-			loseParticle.GetComponent<ParticleSystem> ().Play ();
+			//loseParticle.GetComponent<ParticleSystem> ().Play ();
 			resultSummary.SetActive (true);
 			resultSummary.GetComponentInChildren<Text>().text = "-" + betCoin.ToString();
 			totalCoin = totalCoin - betCoin;
@@ -645,6 +648,7 @@ public class GameControl : MonoBehaviour {
 			}
 			resultSummary.SetActive (false);
 			//yield return new WaitForSeconds(2);
+			meowSound.Play ();
 			result = -1;
 		}
 		PlayerPrefs.SetInt("coin", totalCoin);
@@ -679,7 +683,7 @@ public class GameControl : MonoBehaviour {
 
 		PlayerPrefs.SetString("bonusdate",System.DateTime.Now.ToString("MM/dd/yyyy"));
 		PlayerPrefs.SetInt("coin", totalCoin);
-		yield return new WaitForSeconds(2);
+		yield return new WaitForSeconds(4);
 		resultSummary.SetActive (false);
 		
 	}
