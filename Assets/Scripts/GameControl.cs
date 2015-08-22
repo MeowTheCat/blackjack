@@ -33,6 +33,7 @@ public class GameControl : MonoBehaviour {
 	public WWW www1,www2;
 	public bool fadeDone;
 	public Dictionary<string, int> size;
+	public string bonusDate;
 
 	void Awake()
 	{
@@ -123,6 +124,11 @@ public class GameControl : MonoBehaviour {
 			Debug.Log (pair.Key);
 		}
 		if(size["XS"] * size["S"] * size["M"]* size["L"] * size["XL"]== 0 && (size["XS"] + size["S"] + size["M"] + size["L"] + size["XL"]) > 0  ) sizeMenu.SetActive (false);
+
+		bonusDate = PlayerPrefs.GetString("bonusdate", "");
+		if (bonusDate != System.DateTime.Now.ToString("MM/dd/yyyy"))  StartCoroutine(DailyBonus());
+
+		
 	}
 
 	public void ToggleMenu()
@@ -654,5 +660,28 @@ public class GameControl : MonoBehaviour {
 
 	}
 
+	IEnumerator DailyBonus()
+	{
+		yield return new WaitForSeconds(1);
+		resultSummary.SetActive (true);
+
+		if ((int)System.DateTime.Now.DayOfWeek == 0 || (int)System.DateTime.Now.DayOfWeek == 6)
+		{
+			resultSummary.GetComponentInChildren<Text>().text = "+10000 weekend bonus!" ;
+			totalCoin = totalCoin + 10000;
+		}
+        else
+		{
+			resultSummary.GetComponentInChildren<Text>().text = "+3000 daily bonus!" ;
+			totalCoin = totalCoin + 3000;
+		}
+		coinCnt.GetComponent<Text>().text = totalCoin.ToString();
+
+		PlayerPrefs.SetString("bonusdate",System.DateTime.Now.ToString("MM/dd/yyyy"));
+		PlayerPrefs.SetInt("coin", totalCoin);
+		yield return new WaitForSeconds(2);
+		resultSummary.SetActive (false);
+		
+	}
 
 }
