@@ -35,8 +35,8 @@ public class GameControl : MonoBehaviour {
 	public Dictionary<string, int> size;
 	public string bonusDate;
 
-	private float fingerStartTime  = 0.0f;
-	private Vector2 fingerStartPos = Vector2.zero;
+	private float fingerStartTime ;
+	private Vector2 fingerStartPos;
 	
 	private bool isSwipe = false;
 	private float minSwipeDist  = 50.0f;
@@ -81,23 +81,23 @@ public class GameControl : MonoBehaviour {
 
 
 		brand = GameObject.Find ("Brand");
-		brand.GetComponent<RectTransform>().anchoredPosition = new Vector2 (0f, Screen.width/1.5f*0.85f);
+		brand.GetComponent<RectTransform>().anchoredPosition = new Vector2 (0f, 720f/1.5f*0.85f);
 	    brand.SetActive (false);
 
 		downLeft = GameObject.Find ("DownLeft");
-		downLeft.GetComponent<RectTransform>().anchoredPosition = new Vector2 (0f, -Screen.height * 0.2f );
+		downLeft.GetComponent<RectTransform>().anchoredPosition = new Vector2 (0f, -256f );
 		downLeft.SetActive (false);
 
 		downRight = GameObject.Find ("DownRight");
-		downRight.GetComponent<RectTransform>().anchoredPosition = new Vector2 (0f, -Screen.height * 0.2f );
+		downRight.GetComponent<RectTransform>().anchoredPosition = new Vector2 (0f, -256f );
 		downRight.SetActive (false);
 
 		upLeft = GameObject.Find ("UpLeft");
-		upLeft.GetComponent<RectTransform>().anchoredPosition = new Vector2 (0f, Screen.height * 0.2f );
+		upLeft.GetComponent<RectTransform>().anchoredPosition = new Vector2 (0f, 256f );
 		upLeft.SetActive (false);
 
 		upRight = GameObject.Find ("UpRight");
-		upRight.GetComponent<RectTransform>().anchoredPosition = new Vector2 (0f, Screen.height * 0.2f );
+		upRight.GetComponent<RectTransform>().anchoredPosition = new Vector2 (0f, 256f );
 		upRight.SetActive (false);
 
 		winParticle = GameObject.Find ("WinParticle");
@@ -172,11 +172,18 @@ public class GameControl : MonoBehaviour {
 						if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
 						{
 							if(fingerStartPos.y <= 0.45f * Screen.height && fingerStartPos.y >= 0.15f *  Screen.height) 
-							DownOffset(Mathf.Sign(direction.x)>0);
+							{
+								DownOffset(Mathf.Sign(direction.x)>0);
+								if (gestureDist > 2*minSwipeDist) DownOffset(Mathf.Sign(direction.x)>0);
+							}
 							if(fingerStartPos.y >= 0.55f * Screen.height && fingerStartPos.y <= 0.85f *  Screen.height) 
-							UpOffset(Mathf.Sign(direction.x)>0);
+							{
+								UpOffset(Mathf.Sign(direction.x)>0);
+								if (gestureDist > 2*minSwipeDist) UpOffset(Mathf.Sign(direction.x)>0);
+							}
 						}					
 					}
+					isSwipe = false;
 					break;
 				}
 			}
