@@ -35,6 +35,14 @@ public class GameControl : MonoBehaviour {
 	public Dictionary<string, int> size;
 	public string bonusDate;
 
+	private float fingerStartTime  = 0.0f;
+	private Vector2 fingerStartPos = Vector2.zero;
+	
+	private bool isSwipe = false;
+	private float minSwipeDist  = 50.0f;
+	private float maxSwipeTime = 0.5f;
+
+	
 	void Awake()
 	{
 		screenHeightUnit = GameObject.FindGameObjectWithTag ("MainCamera").GetComponent<Camera>().orthographicSize * 2.0f; 
@@ -120,9 +128,9 @@ public class GameControl : MonoBehaviour {
 		size.Add( "XL", PlayerPrefs.GetInt("size_XL", 0)); 
 		foreach (KeyValuePair<string, int> pair in size)
 		{
-			Debug.Log (pair.Key);
+			//Debug.Log (pair.Key);
 			if (pair.Value == 0) GameObject.Find(pair.Key).GetComponent<Image>().sprite =  Resources.Load<Sprite>("button_gray");
-			Debug.Log (pair.Key);
+			//Debug.Log (pair.Key);
 		}
 		if(size["XS"] * size["S"] * size["M"]* size["L"] * size["XL"]== 0 && (size["XS"] + size["S"] + size["M"] + size["L"] + size["XL"]) > 0  ) sizeMenu.SetActive (false);
 	}
@@ -134,13 +142,54 @@ public class GameControl : MonoBehaviour {
 		if (bonusDate != System.DateTime.Now.ToString("MM/dd/yyyy"))  StartCoroutine(DailyBonus());
 	}
 
+	void Update () {
+		
+		if (result != 0 && Input.touchCount > 0){
+			
+			foreach (Touch touch in Input.touches)
+			{
+				switch (touch.phase)
+				{
+				case TouchPhase.Began :
+					/* this is a new touch */
+					isSwipe = true;
+					fingerStartTime = Time.time;
+					fingerStartPos = touch.position;
+					break;
+					
+				case TouchPhase.Canceled :
+					/* The touch is being canceled */
+					isSwipe = false;
+					break;
+					
+				case TouchPhase.Ended :
+					
+					float gestureTime = Time.time - fingerStartTime;
+					float gestureDist = (touch.position - fingerStartPos).magnitude;
+					
+					if (isSwipe && gestureTime < maxSwipeTime && gestureDist > minSwipeDist){
+						Vector2 direction = touch.position - fingerStartPos;
+						if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
+						{
+							if(fingerStartPos.y <= 0.45f * Screen.height && fingerStartPos.y >= 0.15f *  Screen.height) 
+							DownOffset(Mathf.Sign(direction.x)>0);
+							if(fingerStartPos.y >= 0.55f * Screen.height && fingerStartPos.y <= 0.85f *  Screen.height) 
+							UpOffset(Mathf.Sign(direction.x)>0);
+						}					
+					}
+					break;
+				}
+			}
+		}
+	}
+	
 	public void ToggleMenu()
 	{
 		if (sizeMenu.activeSelf)
 			sizeMenu.SetActive (false);
 		else sizeMenu.SetActive (true);
 	}
-
+	
 	public void ChangeSize(string sz)
 	{
 		if (size [sz] == 1) {
@@ -171,7 +220,7 @@ public class GameControl : MonoBehaviour {
 	public void DoubleBet()
 	{
 		chipSound.Play ();
-		if (betCoin * 2 >= totalCoin || betCoin >= 99999 )
+		if (betCoin * 2 >= totalCoin || betCoin * 2 >= 99999 )
 			betCoin = Mathf.Min(totalCoin, 99999);
 		else if ((betCoin * 2) >= 1000)
 			betCoin = Mathf.CeilToInt (betCoin / 500f) * 1000;
@@ -248,7 +297,7 @@ public class GameControl : MonoBehaviour {
 		}
 
 		path = "http://i1hm3pvto9.execute-api.us-east-1.amazonaws.com/prod/GetAItem?size="+s+"&nocache=" + Random.value.ToString();
-		Debug.Log (path);
+		//Debug.Log (path);
 
 		do {
 			www1 = new WWW (path);
@@ -261,7 +310,7 @@ public class GameControl : MonoBehaviour {
 		yield return www1; 
 		var dict = Json.Deserialize(www1.text) as Dictionary<string,object>;
 		float time3 = Time.time;
-		Debug.Log("stage 1 :" + (time3 - time1).ToString());
+		//Debug.Log("stage 1 :" + (time3 - time1).ToString());
 
 		www2 = new WWW(dict["image"].ToString());
 		yield return www2;
@@ -270,7 +319,7 @@ public class GameControl : MonoBehaviour {
 		float time2 = Time.time;
 		float timeDiff = time2 - time1;
 		//Debug.Log("stage 2 :" + (time2 - time3) .ToString());
-		Debug.Log (dict ["image"].ToString ());
+		//Debug.Log (dict ["image"].ToString ());
 		if(timeDiff < n) {yield return new WaitForSeconds(n-timeDiff);}
 
 		switch (n)
@@ -651,15 +700,17 @@ public class GameControl : MonoBehaviour {
 			meowSound.Play ();
 			result = -1;
 		}
-		PlayerPrefs.SetInt("coin", totalCoin);
-		if (betCoin > totalCoin)		betCoin = totalCoin;
-		bet.SetActive (true);
-		betCnt.GetComponent<Text>().text = betCoin.ToString();
 
 		downLeft.SetActive (true);
 		downRight.SetActive (true);
 		upLeft.SetActive (true);
-		upRight.SetActive (true);
+		upRight.SetActive (true);		
+
+		PlayerPrefs.SetInt("coin", totalCoin);
+		if (betCoin > totalCoin)		betCoin = totalCoin;
+		bet.SetActive (true);
+		betCnt.GetComponent<Text>().text = betCoin.ToString();
+			
 		deal.SetActive(true);
 
 	}
@@ -683,7 +734,7 @@ public class GameControl : MonoBehaviour {
 
 		PlayerPrefs.SetString("bonusdate",System.DateTime.Now.ToString("MM/dd/yyyy"));
 		PlayerPrefs.SetInt("coin", totalCoin);
-		yield return new WaitForSeconds(4);
+		yield return new WaitForSeconds(5);
 		resultSummary.SetActive (false);
 		
 	}

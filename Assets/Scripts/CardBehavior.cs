@@ -3,10 +3,10 @@ using System.Collections;
 using UnityEngine.EventSystems;
 
 
-public class CardBehavior : MonoBehaviour, IPointerDownHandler {
+public class CardBehavior : MonoBehaviour, IPointerClickHandler {
 	
 	
-	public void OnPointerDown(PointerEventData data)
+	public void  OnPointerClick(PointerEventData data)
 	{
 		Component[] renderes;
 		if(gameObject.tag == "Focus")
