@@ -461,7 +461,6 @@ public class GameControl : MonoBehaviour {
 		destination = new Vector3 (screenWidthUnit / 4.0f * (computer.cards.Count - 0.5f) - screenWidthUnit / 2.0f, 0.2f * screenHeightUnit);
 		yield return StartCoroutine(Fade(destination));
 
-
 		if (!UpdateResult ())
 		{
 			ShowCard ();
@@ -505,9 +504,7 @@ public class GameControl : MonoBehaviour {
 		else
 		{   brand.SetActive (false);
 			StartCoroutine(LastCard());
-
-		}
-		
+		}	
 	}
 
 	IEnumerator LastCard()
@@ -519,7 +516,6 @@ public class GameControl : MonoBehaviour {
 		yield return StartCoroutine(Fade(destination));
 		if((player.cards.Count + downOffset) >= 4) DownOffset(false);
 		UpdateResult ();
-
 	}
 
 
