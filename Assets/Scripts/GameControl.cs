@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-
 using System.Collections;
 using System.Collections.Generic;
 //using System.Linq;
@@ -17,8 +16,8 @@ public class GameControl : MonoBehaviour {
 	public Texture2D texture;
 	public float screenWidthUnit, screenHeightUnit;
 	public Deck player, computer;
-	public GameObject hit, stand, deal, next, playerSum,computerSum,playerBust,computerBust,brand,priceTag,link,
-	downLeft,downRight,upLeft,upRight,winParticle,loseParticle,resultSummary,bet,coinCnt,betCnt,sizeMenu,intro,connection;
+	public GameObject hit, stand, deal, next, playerSum,computerSum,playerBust,computerBust,brand,priceTag,link,email,emailInput,emailSubmit,emailCancel,
+	downLeft,downRight,upLeft,upRight,winParticle,resultSummary,bet,coinCnt,betCnt,sizeMenu,intro,connection;
 	public Vector3 destination;
 	public float pixelsToUnits;
 	public int downOffset,upOffset;
@@ -27,7 +26,7 @@ public class GameControl : MonoBehaviour {
 	public Texture anime;
 	public Texture[] winPictureArray,losePictureArray;
 	public int delay;
-	public GameObject tagModel,linkModel;
+	public GameObject tagModel,linkModel,emailModel;
 	public int result ;
 	public AudioSource dealSound,cardSound,winSound,loseSound,bonusSound,chipSound,meowSound;
 	public WWW www1,www2;
@@ -79,6 +78,13 @@ public class GameControl : MonoBehaviour {
 		playerBust.SetActive (false);
 		computerBust.SetActive (false);
 
+		emailInput = GameObject.Find("EmailInput");	
+		emailSubmit = GameObject.Find("EmailSubmit");	
+		emailCancel = GameObject.Find("EmailCancel");	
+
+		emailInput.SetActive (false);
+		emailSubmit.SetActive (false);
+		emailCancel.SetActive (false);
 
 		brand = GameObject.Find ("Brand");
 		brand.GetComponent<RectTransform>().anchoredPosition = new Vector2 (0f, 720f/1.5f*0.85f);
@@ -101,7 +107,6 @@ public class GameControl : MonoBehaviour {
 		upRight.SetActive (false);
 
 		winParticle = GameObject.Find ("WinParticle");
-		loseParticle = GameObject.Find ("LoseParticle");
 		resultSummary = GameObject.Find ("ResultSummary");
 		resultSummary.SetActive (false);
 
@@ -353,6 +358,7 @@ public class GameControl : MonoBehaviour {
 		current.GetComponent<SpriteRenderer> ().sortingOrder = 0;
 		priceTag.GetComponent<Renderer> ().sortingOrder = 0;
 		link.GetComponent<Renderer> ().sortingOrder = 1;
+		email.GetComponent<Renderer> ().sortingOrder = 1;
 		current.AddComponent<BoxCollider2D>() ;
 		current.AddComponent<CardBehavior>() ;
 		fadeDone = true;
@@ -413,11 +419,21 @@ public class GameControl : MonoBehaviour {
 		link.transform.localScale = new Vector3 (0.5f,0.5f,0.5f);
 		link.GetComponent<Renderer> ().sortingOrder = 101;
 
-		if(isPlayer) player.AddCard(new Card(current, int.Parse(dict ["sale_price"].ToString()),int.Parse(dict ["retail_price"].ToString()),dict ["url"].ToString()));
-		else computer.AddCard(new Card(current, int.Parse(dict ["sale_price"].ToString()),int.Parse(dict ["retail_price"].ToString()),dict ["url"].ToString()));
+		email = Instantiate(emailModel, new Vector3(0, 0, 0), Quaternion.identity) as GameObject;
+		email.transform.parent = current.transform;
+		email.transform.localPosition = new Vector3 (screenWidthUnit/8.0f/0.4f - 0.32f,  screenWidthUnit/8.0f*1.4f/0.385f -0.4f - 0.35f -0.6f , 0);
+		email.transform.localScale = new Vector3 (0.5f,0.5f,0.5f);
+		email.GetComponent<Renderer> ().sortingOrder = 101;
+
+
+		if(isPlayer) player.AddCard(new Card(current, int.Parse(dict ["sale_price"].ToString()),int.Parse(dict ["retail_price"].ToString()),dict ["url"].ToString(),dict ["category"].ToString(),dict ["brand"].ToString(),dict ["image"].ToString()));
+		else computer.AddCard(new Card(current, int.Parse(dict ["sale_price"].ToString()),int.Parse(dict ["retail_price"].ToString()),dict ["url"].ToString(),dict ["category"].ToString(),dict ["brand"].ToString(),dict ["image"].ToString()));
 
 		link.AddComponent<BoxCollider2D>() ;
 		link.AddComponent<LinkBehavior>() ;
+		
+		email.AddComponent<BoxCollider2D>() ;
+		email.AddComponent<EmailBehavior>() ;
 
 	}
 	
@@ -741,5 +757,19 @@ public class GameControl : MonoBehaviour {
 		resultSummary.SetActive (false);
 		
 	}
+
+	public void SubmitEmail()
+	{
+		PlayerPrefs.SetString("email", emailInput.GetComponent<InputField>().text);
+		CancelEmail ();
+	}
+
+	public void CancelEmail()
+	{
+		emailInput.SetActive (false);
+		emailSubmit.SetActive (false);
+		emailCancel.SetActive (false);
+	}
+
 
 }
