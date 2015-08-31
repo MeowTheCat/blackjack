@@ -44,7 +44,7 @@ public class EmailBehavior : MonoBehaviour, IPointerDownHandler {
 	IEnumerator SendMail()
 	{
 		gameObject.GetComponent<SpriteRenderer> ().sprite =  Resources.Load<Sprite>("check");
-		var jsonString = "{ \"url\":\"" + card.url + "\",\"brand\":\"" + card.brand + "\",\"category\":\"" + card.category + "\",\"image\":\"" + card.image_url + "\"}";
+		var jsonString = "{ \"url\":\"" + card.url + "\",\"brand\":\"" + card.brand + "\",\"category\":\"" + card.category + "\",\"image\":\"" + card.image_url  + "\",\"email\":\"" + email + "\"}";
 		
 		var encoding = new System.Text.UTF8Encoding();
 		Dictionary<string, string> header = new Dictionary<string, string>();
