@@ -771,5 +771,13 @@ public class GameControl : MonoBehaviour {
 		emailCancel.SetActive (false);
 	}
 
+	public void ShowEmail()
+	{
+		emailInput.SetActive (true);
+		emailSubmit.SetActive (true);
+		emailCancel.SetActive (true);
+		emailInput.GetComponent<InputField> ().text = PlayerPrefs.GetString ("email", "");
+	}
+
 
 }
