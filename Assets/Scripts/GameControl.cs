@@ -17,7 +17,7 @@ public class GameControl : MonoBehaviour {
 	public float screenWidthUnit, screenHeightUnit;
 	public Deck player, computer;
 	public GameObject hit, stand, deal, next, playerSum,computerSum,playerBust,computerBust,brand,priceTag,link,email,emailInput,emailSubmit,emailCancel,
-	downLeft,downRight,upLeft,upRight,winParticle,resultSummary,bet,coinCnt,betCnt,sizeMenu,intro,connection;
+	downLeft,downRight,upLeft,upRight,winParticle,resultSummary,bet,coinCnt,betCnt,sizeMenu,shoeSizeText,intro,connection;
 	public Vector3 destination;
 	public float pixelsToUnits;
 	public int downOffset,upOffset;
@@ -32,6 +32,7 @@ public class GameControl : MonoBehaviour {
 	public WWW www1,www2;
 	public bool fadeDone;
 	public Dictionary<string, int> size;
+	public float shoeSize;
 	public string bonusDate;
 
 	private float fingerStartTime ;
@@ -124,6 +125,11 @@ public class GameControl : MonoBehaviour {
 		betCnt.GetComponent<Text>().text = betCoin.ToString();
 
 		sizeMenu = GameObject.Find ("SizeMenu");
+	
+		shoeSize = PlayerPrefs.GetFloat ("shoesize", 7);
+		shoeSizeText = GameObject.Find ("ShoeSizeText");
+		shoeSizeText.GetComponentInChildren<Text> ().text = shoeSize.ToString () + "-" + (shoeSize+1).ToString ();
+		sizeMenu.GetComponentInChildren<Slider> ().value = shoeSize * 2;
 
 		size= new Dictionary<string, int>();
 		size.Add( "XS", PlayerPrefs.GetInt("size_XS", 0)); 
@@ -138,6 +144,8 @@ public class GameControl : MonoBehaviour {
 			//Debug.Log (pair.Key);
 		}
 		if(size["XS"] * size["S"] * size["M"]* size["L"] * size["XL"]== 0 && (size["XS"] + size["S"] + size["M"] + size["L"] + size["XL"]) > 0  ) sizeMenu.SetActive (false);
+	
+
 	}
 
 
@@ -212,6 +220,13 @@ public class GameControl : MonoBehaviour {
 		}
 		size [sz] = Mathf.Abs (size [sz] - 1);
 		PlayerPrefs.SetInt("size_"+sz, size [sz] );
+	}
+
+	public void ChangeShoeSize(float sz)
+	{
+		shoeSize = sz/2;
+		shoeSizeText.GetComponentInChildren<Text> ().text = shoeSize.ToString () + "-" + (shoeSize+0.5).ToString ();
+		PlayerPrefs.SetFloat("shoesize", shoeSize );
 	}
 
 	public void HalfBet()
@@ -307,9 +322,10 @@ public class GameControl : MonoBehaviour {
 		{
 			if (pair.Value == 1) s = s+ "*"+pair.Key;
 		}
+		s = s+ "&shoesize="+shoeSize;
 
 		path = "http://i1hm3pvto9.execute-api.us-east-1.amazonaws.com/prod/GetAItem?size="+s+"&nocache=" + Random.value.ToString();
-		//Debug.Log (path);
+		Debug.Log (path);
 
 		do {
 			www1 = new WWW (path);
