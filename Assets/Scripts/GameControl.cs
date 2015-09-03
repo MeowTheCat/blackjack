@@ -325,7 +325,7 @@ public class GameControl : MonoBehaviour {
 		s = s+ "&shoesize="+shoeSize;
 
 		path = "http://i1hm3pvto9.execute-api.us-east-1.amazonaws.com/prod/GetAItem?size="+s+"&nocache=" + Random.value.ToString();
-		Debug.Log (path);
+		//Debug.Log (path);
 
 		do {
 			www1 = new WWW (path);
