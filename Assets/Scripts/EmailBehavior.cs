@@ -42,7 +42,7 @@ public class EmailBehavior : MonoBehaviour, IPointerDownHandler {
 	IEnumerator SendMail()
 	{
 
-		var jsonString = "{ \"url\":\"" + card.url + "\",\"brand\":\"" + card.brand + "\",\"category\":\"" + card.category + "\",\"image\":\"" + card.image_url  + "\",\"email\":\"" + email + "\"}";
+		var jsonString = "{ \"url\":\"" + card.url + "\",\"brand\":\"" + card.brand + "\",\"category\":\"" + card.category + "\",\"image\":\"" + card.image_url  + "\",\"email\":\"" + email +  "\",\"price\":\"" + card.price + "\"}";
 		var encoding = new System.Text.UTF8Encoding();
 		Dictionary<string, string> header = new Dictionary<string, string>();
 		header.Add("Content-Type",  "text/json");
@@ -63,6 +63,5 @@ public class EmailBehavior : MonoBehaviour, IPointerDownHandler {
 		email = PlayerPrefs.GetString ("email", "");
 		StartCoroutine(SendMail()); 
 	}
-
-
+	
 }
