@@ -346,8 +346,6 @@ public class GameControl : MonoBehaviour {
 
 		float time2 = Time.time;
 		float timeDiff = time2 - time1;
-		//Debug.Log("stage 2 :" + (time2 - time3) .ToString());
-		//Debug.Log (dict ["image"].ToString ());
 		if(timeDiff < n) {yield return new WaitForSeconds(n-timeDiff);}
 
 		switch (n)
