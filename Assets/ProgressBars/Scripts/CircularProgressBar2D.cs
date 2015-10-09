@@ -10,22 +10,15 @@ namespace ProgressBarToolkit
     }
 
 
-   
     public class CircularProgressBar2D : MonoBehaviour
     {
-
-
-        public string trackedVarName;
-        public string trackedVarMax;
-        public string trackedVarMin;
-
+      
    
         public Image barBackground;
         public Color barBackgroundColor;
         public Image barFill;
         public Color barFillColor;
 
-  
         public bool showValue;
    
         public Text textElement;
@@ -37,20 +30,15 @@ namespace ProgressBarToolkit
 		public float _maxValue ;
         public float _currentValue;
 		public float barValue ;
-		protected float step;
 
-     
-
-
-
+ 
         private RectTransform rectTransform;
 
         //Sets some initial values and validates input from inspector.
         public void Start()
         {
-			//Init (4f);
-	
             rectTransform = GetComponent<RectTransform>();
+
         }
 
 		public void Init(float time)
@@ -59,15 +47,13 @@ namespace ProgressBarToolkit
 			 _maxValue = time;
 			 _currentValue = 0f;
 			 barValue = 0f;
-
 		}
        
 
         public void Update()
         {
 			barValue = Mathf.Min(barValue + Time.deltaTime,_maxValue);
-			_currentValue = barValue;
-           
+			_currentValue = barValue;   
         }
 
         //Draws the elements of the bar and arranges them on the screen

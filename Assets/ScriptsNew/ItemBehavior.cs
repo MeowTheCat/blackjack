@@ -4,7 +4,7 @@ using UnityEngine.EventSystems;
 
 
 public class ItemBehavior : MonoBehaviour, IPointerClickHandler {
-	
+
 	
 	public void  OnPointerClick(PointerEventData data)
 	{
@@ -16,7 +16,14 @@ public class ItemBehavior : MonoBehaviour, IPointerClickHandler {
 
 			gameObject.tag = "Untagged";
 
-
+			for(int i=0; i<gf.bench.Count(); i++)
+			{
+				if(gf.cards[gf.bench.Get(i)].picture ==  gameObject && gf.myturn == true) 
+				{
+					gameObject.tag = "Focus";
+					gf.myturn = false;
+				}
+			}
 			gameObject.transform.localScale = new Vector3 (0.375f, 0.375f, 0.375f);
 			renderes = GetComponentsInChildren<Renderer>();
 			foreach (Renderer renderer in renderes) {
@@ -37,7 +44,7 @@ public class ItemBehavior : MonoBehaviour, IPointerClickHandler {
 				}
 			}
 			
-			gameObject.transform.localScale = new Vector3 (1f, 1f, 1f);
+			gameObject.transform.localScale = new Vector3 (0.8f, 0.8f, 0.8f);
 			renderes = GetComponentsInChildren<Renderer>();
 			foreach (Renderer renderer in renderes) {
 				renderer.sortingOrder = renderer.sortingOrder + 200;

@@ -17,7 +17,6 @@ public class Pile{
 	public void AddNode(int c)
 	{
 		pile.Add (c);
-		
 	}
 
 	public void RemoveNode(int c)
