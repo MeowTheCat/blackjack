@@ -22,8 +22,11 @@ public class GameFlow : MonoBehaviour {
 	private float minSwipeDist  = 50.0f;
 	private float maxSwipeTime = 0.5f;
 
-	public GameObject timer,progress,tagModel;
+	public GameObject timer,progress,tagModel,selfPrice,opponentPrice,link,linkModel;
 	public float turnTime = 6;
+	public int delay1,delay2;
+	public Texture anime1,anime2;
+	public Texture[] winPictureArray,losePictureArray;
 
 	void Awake()
 	{
@@ -38,6 +41,15 @@ public class GameFlow : MonoBehaviour {
 		progress = GameObject.Find("Progress");
 		progress.SetActive (false);
 
+		selfPrice =  GameObject.Find("SelfPrice"); 
+		opponentPrice = GameObject.Find("OpponentPrice"); 
+
+		selfPrice.GetComponent<RectTransform>().anchoredPosition = new Vector2 (30f,-Screen.height*0.4f);
+		opponentPrice.GetComponent<RectTransform>().anchoredPosition = new Vector2 (30f, Screen.height*0.2f);
+
+		selfPrice.SetActive (false);
+		opponentPrice.SetActive (false);
+
 		mefirst = false;
 	}
 
@@ -49,9 +61,11 @@ public class GameFlow : MonoBehaviour {
 	IEnumerator OnDeal() 
 	{
 
+		dealdone = false;
 		bench = new Pile();
 		self = new Pile();
 		opponent = new Pile();
+
 
 		foreach (Item card in cards) {
 			if(card != null) Object.Destroy(card.picture);
@@ -62,6 +76,13 @@ public class GameFlow : MonoBehaviour {
 		yield return StartCoroutine (DisplayCards());
 
 		dealdone = true;
+		selfPrice.SetActive (true);
+		opponentPrice.SetActive (true);
+		selfPrice.GetComponentInChildren<Text>().text = "$" + self.sum.ToString();
+		opponentPrice.GetComponentInChildren<Text>().text = "$" + opponent.sum.ToString();
+
+
+	
 
 		yield return StartCoroutine (SelfChoose());
 		yield return new WaitForSeconds(1);
@@ -72,6 +93,9 @@ public class GameFlow : MonoBehaviour {
 		yield return StartCoroutine (OpponentChoose(1f));
 
 		yield return new WaitForSeconds(3);
+
+		selfPrice.SetActive (false);
+		opponentPrice.SetActive (false);
 		yield return StartCoroutine (OnDeal ());
 	}
 
@@ -112,6 +136,30 @@ public class GameFlow : MonoBehaviour {
 			}
 		}
 		GameObject obj = cards[bench.Get(i)].picture;
+
+		GameObject priceTag = Instantiate(tagModel, new Vector3(0, 0, 0), Quaternion.identity) as GameObject;
+		priceTag.name = "PriceTag";
+		priceTag.transform.parent = obj.transform;
+		priceTag.transform.localPosition = new Vector3 (screenWidthUnit/8.0f/0.4f,  screenWidthUnit/8.0f*1.4f/0.4f , 0);
+		priceTag.transform.localScale = new Vector3 (0.05f,0.05f,0.05f);
+		priceTag.GetComponent<Renderer> ().sortingOrder = 100;
+		priceTag.GetComponent<TextMesh> ().text = "<color=#ff0000ff>$" + cards[bench.Get(i)].price.ToString()  +"</color>"; 
+
+		link = Instantiate(linkModel, new Vector3(0, 0, 0), Quaternion.identity) as GameObject;
+		link.transform.parent = obj.transform;
+		link.transform.localPosition = new Vector3 (screenWidthUnit/8.0f/0.4f - 0.32f,  screenWidthUnit/8.0f*1.4f/0.4f - 0.9f , 0);
+		link.transform.localScale = new Vector3 (0.5f,0.5f,0.5f);
+		link.GetComponent<Renderer> ().sortingOrder = 101;
+
+		link.AddComponent<BoxCollider2D>() ;
+		link.AddComponent<LinkBehavior2>() ;
+		
+		opponent.sum = opponent.sum + cards [bench.Get (i)].price;
+		opponentPrice.GetComponentInChildren<Text>().text = "$" + opponent.sum.ToString();
+
+
+
+
 		opponent.AddNode(bench.Get(i));
 		bench.RemoveNode(i);
 		
@@ -162,6 +210,19 @@ public class GameFlow : MonoBehaviour {
 		priceTag.GetComponent<Renderer> ().sortingOrder = 100;
 		priceTag.GetComponent<TextMesh> ().text = "<color=#ff0000ff>$" + cards[bench.Get(i)].price.ToString()  +"</color>"; 
 
+		link = Instantiate(linkModel, new Vector3(0, 0, 0), Quaternion.identity) as GameObject;
+		link.transform.parent = obj.transform;
+		link.transform.localPosition = new Vector3 (screenWidthUnit/8.0f/0.4f - 0.32f,  screenWidthUnit/8.0f*1.4f/0.4f - 0.9f , 0);
+		link.transform.localScale = new Vector3 (0.5f,0.5f,0.5f);
+		link.GetComponent<Renderer> ().sortingOrder = 101;
+		
+		link.AddComponent<BoxCollider2D>() ;
+		link.AddComponent<LinkBehavior2>() ;
+
+		self.sum = self.sum + cards [bench.Get (i)].price;
+		
+		selfPrice.GetComponentInChildren<Text>().text = "$" + self.sum.ToString();
+	
 		self.AddNode(bench.Get(i));
 		bench.RemoveNode(i);
 
@@ -208,7 +269,7 @@ public class GameFlow : MonoBehaviour {
 
 	IEnumerator DisplayCards()
 	{
-		dealdone = false;
+
 		WWW www2;
 		Vector3 destination;
 		for (int i=0; i<4; i++) 
@@ -280,53 +341,69 @@ public class GameFlow : MonoBehaviour {
 		}
 	}
 
-	/*
-	void Update () {
-		
-		if (dealdone && Input.touchCount > 0){
-			
-			foreach (Touch touch in Input.touches)
-			{
-				switch (touch.phase)
-				{
-				case TouchPhase.Began :
+	void OnGUI() {
+		if (dealdone && self.sum < opponent.sum ) {
+			if (delay1 % 10 == 0) {
+				if (delay1 >= 40) {
+					delay1 = delay1 - 40;
+				}    
+				int i = delay1 / 10;
+				anime1 = winPictureArray [i];
+			} 
+			delay1++;
+			GUI.DrawTexture (new Rect (0, Screen.height /10 , Screen.width /4, Screen.width /4), anime1, ScaleMode.ScaleToFit, true, 0);
 
-					isSwipe = true;
-					fingerStartTime = Time.time;
-					fingerStartPos = touch.position;
-					break;
-					
-				case TouchPhase.Canceled :
-
-					isSwipe = false;
-					break;
-					
-				case TouchPhase.Ended :
-					
-					float gestureTime = Time.time - fingerStartTime;
-					float gestureDist = (touch.position - fingerStartPos).magnitude;
-					
-					if (isSwipe && gestureTime < maxSwipeTime && gestureDist > minSwipeDist){
-						Vector2 direction = touch.position - fingerStartPos;
-						if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
-						{
-							if(fingerStartPos.y <= 0.35f * Screen.height && fingerStartPos.y >= 0.65f *  Screen.height) 
-							{
-								HMove(Mathf.Sign(direction.x)>0,bench);
-								if (gestureDist > 2*minSwipeDist) HMove(Mathf.Sign(direction.x)>0,bench);
-							}
-							if(fingerStartPos.y >= 0.35f * Screen.height && fingerStartPos.y <= 0.65f *  Screen.height) 
-							{
-								HMove(Mathf.Sign(direction.x)>0,bench);
-								if (gestureDist > 2*minSwipeDist) HMove(Mathf.Sign(direction.x)>0,bench);
-							}
-						}					
-					}
-					isSwipe = false;
-					break;
-				}
-			}
+			if (delay2 % 10 == 0) {
+				if (delay2 >= 90) {
+					delay2 = delay2 - 90;
+				} 
+				int j = delay2 / 10 ;
+				anime2 = losePictureArray[j];
+			}      
+			delay2++;
+			GUI.DrawTexture (new Rect ( Screen.width /30, Screen.height *3/4, Screen.width / 4, Screen.width / 4), anime2, ScaleMode.ScaleToFit, true, 0);
 		}
+
+		if (dealdone && self.sum > opponent.sum ) {
+			if (delay1 % 10 == 0) {
+				if (delay1 >= 40) {
+					delay1 = delay1 - 40;
+				}    
+				int i = delay1 / 10;
+				anime1 = winPictureArray [i];
+			} 
+			delay1++;
+			GUI.DrawTexture (new Rect (0, Screen.height*3/4 , Screen.width /4, Screen.width /4), anime1, ScaleMode.ScaleToFit, true, 0);
+			
+			if (delay2 % 10 == 0) {
+				if (delay2 >= 90) {
+					delay2 = delay2 - 90;
+				} 
+				int j = delay2 / 10 ;
+				anime2 = losePictureArray[j];
+			}      
+			delay2++;
+			GUI.DrawTexture (new Rect ( Screen.width / 30, Screen.height/10, Screen.width / 4, Screen.width / 4), anime2, ScaleMode.ScaleToFit, true, 0);
+		}
+
+		if (dealdone && self.sum == opponent.sum  ) {
+			if (delay1 % 10 == 0) {
+				if (delay1 >= 40) {
+					delay1 = delay1 - 40;
+				}    
+				int i = delay1 / 10;
+				anime1 = winPictureArray [i];
+			} 
+			delay1++;
+			GUI.DrawTexture (new Rect (0, Screen.height /10 , Screen.width /4, Screen.width /4), anime1, ScaleMode.ScaleToFit, true, 0);
+			GUI.DrawTexture (new Rect (0, Screen.height*3/4 , Screen.width /4, Screen.width /4), anime1, ScaleMode.ScaleToFit, true, 0);
+			
+
+		}
+
+
 	}
-    */
+
+
+
 }
