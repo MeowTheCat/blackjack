@@ -14,23 +14,24 @@ public class GameFlow : MonoBehaviour {
 	public float screenWidthUnit, screenHeightUnit;
 	public bool dealdone,myturn,mefirst ;
 
-
-	private float fingerStartTime ;
-	private Vector2 fingerStartPos;
-	
-	private bool isSwipe = false;
-	private float minSwipeDist  = 50.0f;
-	private float maxSwipeTime = 0.5f;
-
-	public GameObject timer,progress,tagModel,selfPrice,opponentPrice,link,linkModel;
+	public GameObject timer,progress,tagModel,tagModel2,selfPrice,opponentPrice,link,linkModel,winParticle;
 	public float turnTime = 6;
 	public int delay1,delay2;
 	public Texture anime1,anime2;
-	public Texture[] winPictureArray,losePictureArray;
+	public Texture[] winPictureArray,losePictureArray,huangshouArray;
+	public AudioSource dealSound,cardSound,winSound,loseSound,bonusSound,chipSound,meowSound;
 
 	void Awake()
 	{
 		Application.runInBackground = true;
+
+		
+		AudioSource[] audios = gameObject.GetComponents<AudioSource>();
+
+		winSound = audios[0];
+		cardSound = audios[1];
+		dealSound = audios [2];
+
 		screenHeightUnit = GameObject.FindGameObjectWithTag ("MainCamera").GetComponent<Camera>().orthographicSize * 2.0f; 
 		screenWidthUnit = screenHeightUnit * Screen.width/Screen.height ;
 		cardData = new Dictionary<string,object>[6];
@@ -61,18 +62,22 @@ public class GameFlow : MonoBehaviour {
 	IEnumerator OnDeal() 
 	{
 
-		dealdone = false;
+    	yield return StartCoroutine (LoadData());
+
 		bench = new Pile();
 		self = new Pile();
 		opponent = new Pile();
-
-
+		
+		
 		foreach (Item card in cards) {
 			if(card != null) Object.Destroy(card.picture);
 		}
 		Resources.UnloadUnusedAssets();
-		
-		yield return StartCoroutine (LoadData());
+
+		selfPrice.SetActive (false);
+		opponentPrice.SetActive (false);
+		dealdone = false;
+
 		yield return StartCoroutine (DisplayCards());
 
 		dealdone = true;
@@ -80,9 +85,6 @@ public class GameFlow : MonoBehaviour {
 		opponentPrice.SetActive (true);
 		selfPrice.GetComponentInChildren<Text>().text = "$" + self.sum.ToString();
 		opponentPrice.GetComponentInChildren<Text>().text = "$" + opponent.sum.ToString();
-
-
-	
 
 		yield return StartCoroutine (SelfChoose());
 		yield return new WaitForSeconds(1);
@@ -92,10 +94,14 @@ public class GameFlow : MonoBehaviour {
 		yield return new WaitForSeconds(1);
 		yield return StartCoroutine (OpponentChoose(1f));
 
-		yield return new WaitForSeconds(3);
+		if (self.sum >= opponent.sum)
+		{  
+			winSound.Play ();
+			winParticle.GetComponent<ParticleSystem> ().Play ();
+		}
+ 		yield return new WaitForSeconds(3);
 
-		selfPrice.SetActive (false);
-		opponentPrice.SetActive (false);
+
 		yield return StartCoroutine (OnDeal ());
 	}
 
@@ -135,6 +141,8 @@ public class GameFlow : MonoBehaviour {
 				break;
 			}
 		}
+
+		cardSound.Play ();
 		GameObject obj = cards[bench.Get(i)].picture;
 
 		GameObject priceTag = Instantiate(tagModel, new Vector3(0, 0, 0), Quaternion.identity) as GameObject;
@@ -149,16 +157,13 @@ public class GameFlow : MonoBehaviour {
 		link.transform.parent = obj.transform;
 		link.transform.localPosition = new Vector3 (screenWidthUnit/8.0f/0.4f - 0.32f,  screenWidthUnit/8.0f*1.4f/0.4f - 0.9f , 0);
 		link.transform.localScale = new Vector3 (0.5f,0.5f,0.5f);
-		link.GetComponent<Renderer> ().sortingOrder = 101;
+		link.GetComponent<Renderer> ().sortingOrder = 1;
 
 		link.AddComponent<BoxCollider2D>() ;
 		link.AddComponent<LinkBehavior2>() ;
 		
 		opponent.sum = opponent.sum + cards [bench.Get (i)].price;
 		opponentPrice.GetComponentInChildren<Text>().text = "$" + opponent.sum.ToString();
-
-
-
 
 		opponent.AddNode(bench.Get(i));
 		bench.RemoveNode(i);
@@ -198,6 +203,8 @@ public class GameFlow : MonoBehaviour {
 		}
 		if (i == bench.Count ())	i = 0;
 
+		cardSound.Play ();
+		
 		GameObject obj = cards[bench.Get(i)].picture;
 		obj.tag =  "Untagged";
 	
@@ -214,7 +221,7 @@ public class GameFlow : MonoBehaviour {
 		link.transform.parent = obj.transform;
 		link.transform.localPosition = new Vector3 (screenWidthUnit/8.0f/0.4f - 0.32f,  screenWidthUnit/8.0f*1.4f/0.4f - 0.9f , 0);
 		link.transform.localScale = new Vector3 (0.5f,0.5f,0.5f);
-		link.GetComponent<Renderer> ().sortingOrder = 101;
+		link.GetComponent<Renderer> ().sortingOrder = 1;
 		
 		link.AddComponent<BoxCollider2D>() ;
 		link.AddComponent<LinkBehavior2>() ;
@@ -238,6 +245,7 @@ public class GameFlow : MonoBehaviour {
 	IEnumerator LoadData()
 	{
 
+		dealSound.Play ();
 		myturn = true;
 	
 		progress.SetActive (true);
@@ -247,7 +255,7 @@ public class GameFlow : MonoBehaviour {
 
 		float time1 = Time.time;
 		string path;
-		path = "http://i1hm3pvto9.execute-api.us-east-1.amazonaws.com/prod/test";
+		path = "https://i1hm3pvto9.execute-api.us-east-1.amazonaws.com/prod/test";
 		
 		WWW www1 = new WWW (path);
 		yield return www1; 
@@ -265,6 +273,7 @@ public class GameFlow : MonoBehaviour {
 	
 		if(timeDiff < 3) {yield return new WaitForSeconds(3-timeDiff);}
 		progress.SetActive (false);
+
 	}
 
 	IEnumerator DisplayCards()
@@ -278,6 +287,7 @@ public class GameFlow : MonoBehaviour {
 			www2 = new WWW(cardData[i]["image"].ToString());
 			yield return www2;
 
+			cardSound.Play ();
 			GameObject current = new GameObject();
 			SpriteRenderer renderer =  current.AddComponent<SpriteRenderer>();
 			renderer.sortingOrder = 100;	
@@ -287,13 +297,29 @@ public class GameFlow : MonoBehaviour {
 			renderer.sprite = sprite;
 			current.transform.localScale = new Vector3 (1.2f, 1.2f, 1.2f);
 
+
+			GameObject brand = new GameObject();
+			renderer =  brand.AddComponent<SpriteRenderer>();
+			renderer.sprite = Resources.Load<Sprite>("03_hover");
+			brand.transform.parent = current.transform;
+			brand.transform.localPosition = new Vector3 (0,  screenWidthUnit * 0.52f , 0);
+			brand.transform.localScale = new Vector3 (1.5f,0.7f,1f);
+			brand.GetComponent<Renderer> ().sortingOrder = 100;
+
+			GameObject brandname = Instantiate(tagModel2, new Vector3(0, 0, 0), Quaternion.identity) as GameObject;
+			brandname.transform.parent = brand.transform;
+			brandname.transform.localPosition = new Vector3 (0,  0 , 0);
+			brandname.transform.localScale = new Vector3 (0.02f,0.04f,0.02f);
+			brandname.GetComponent<Renderer> ().sortingOrder = 100;
+			brandname.GetComponent<TextMesh> ().text =  cardData[i]["brand"].ToString() ; 
+
 			Item card = new Item(current, int.Parse(cardData[i]["sale_price"].ToString()),int.Parse(cardData[i]["retail_price"].ToString()),cardData[i]["url"].ToString(),cardData[i]["category"].ToString(),cardData[i]["brand"].ToString(),cardData[i]["image"].ToString());
 			cards[i] = card;
 			bench.AddNode(i);
 
 			yield return new WaitForSeconds(1.5f);
 			destination = new Vector3 (screenWidthUnit / 4.0f * (i  + bench.offset + 0.5f) - screenWidthUnit / 2.0f, 0,0);
-			yield return StartCoroutine(Fade(current,destination,0.375f));
+		    StartCoroutine(Fade(current,destination,0.375f));
 
 			//if((bench.Count() + bench.offset) >= 4  && bench.Count()< 4) HMove(false,bench);
 		}
@@ -315,7 +341,11 @@ public class GameFlow : MonoBehaviour {
 			current.transform.position = Vector3.Lerp (current.transform.position, destination, 0.4f);
 			yield return null;
 		}
-		current.GetComponent<SpriteRenderer> ().sortingOrder = 0;
+		Component[] renderes = current.GetComponentsInChildren<Renderer>();
+		foreach (Renderer renderer in renderes) {
+			renderer.sortingOrder = 0;
+		}
+		//current.GetComponent<SpriteRenderer> ().sortingOrder = 0;
 		//Debug.Log (Time.time.ToString());
 	}
 
@@ -342,22 +372,18 @@ public class GameFlow : MonoBehaviour {
 	}
 
 	void OnGUI() {
-		if (dealdone && self.sum < opponent.sum ) {
-			if (delay1 % 10 == 0) {
-				if (delay1 >= 40) {
-					delay1 = delay1 - 40;
-				}    
-				int i = delay1 / 10;
-				anime1 = winPictureArray [i];
+		if (dealdone && self.sum <= opponent.sum ) {
+			if (delay1 % 20 == 0) {
+			  
+				int i =  (delay1 / 20)%2;
+				anime1 = huangshouArray [i];
 			} 
 			delay1++;
-			GUI.DrawTexture (new Rect (0, Screen.height /10 , Screen.width /4, Screen.width /4), anime1, ScaleMode.ScaleToFit, true, 0);
+			GUI.DrawTexture (new Rect (0, Screen.height /10 , Screen.width /5, Screen.width /5), anime1, ScaleMode.ScaleToFit, true, 0);
 
 			if (delay2 % 10 == 0) {
-				if (delay2 >= 90) {
-					delay2 = delay2 - 90;
-				} 
-				int j = delay2 / 10 ;
+
+				int j =  (delay2 / 10)%9;
 				anime2 = losePictureArray[j];
 			}      
 			delay2++;
@@ -365,42 +391,24 @@ public class GameFlow : MonoBehaviour {
 		}
 
 		if (dealdone && self.sum > opponent.sum ) {
-			if (delay1 % 10 == 0) {
-				if (delay1 >= 40) {
-					delay1 = delay1 - 40;
-				}    
-				int i = delay1 / 10;
-				anime1 = winPictureArray [i];
-			} 
-			delay1++;
-			GUI.DrawTexture (new Rect (0, Screen.height*3/4 , Screen.width /4, Screen.width /4), anime1, ScaleMode.ScaleToFit, true, 0);
+
+			if (delay2 % 30 == 0) {
 			
-			if (delay2 % 10 == 0) {
-				if (delay2 >= 90) {
-					delay2 = delay2 - 90;
-				} 
-				int j = delay2 / 10 ;
-				anime2 = losePictureArray[j];
+				int j =  (delay2 / 30)%2+2;
+				anime1 = huangshouArray[j];
 			}      
 			delay2++;
-			GUI.DrawTexture (new Rect ( Screen.width / 30, Screen.height/10, Screen.width / 4, Screen.width / 4), anime2, ScaleMode.ScaleToFit, true, 0);
-		}
+			GUI.DrawTexture (new Rect ( 0, Screen.height/10, Screen.width /5, Screen.width /5), anime1, ScaleMode.ScaleToFit, true, 0);
 
-		if (dealdone && self.sum == opponent.sum  ) {
 			if (delay1 % 10 == 0) {
-				if (delay1 >= 40) {
-					delay1 = delay1 - 40;
-				}    
-				int i = delay1 / 10;
-				anime1 = winPictureArray [i];
+				int i = (delay1 / 10)%4;
+				anime2 = winPictureArray [i];
 			} 
 			delay1++;
-			GUI.DrawTexture (new Rect (0, Screen.height /10 , Screen.width /4, Screen.width /4), anime1, ScaleMode.ScaleToFit, true, 0);
-			GUI.DrawTexture (new Rect (0, Screen.height*3/4 , Screen.width /4, Screen.width /4), anime1, ScaleMode.ScaleToFit, true, 0);
+			GUI.DrawTexture (new Rect (0, Screen.height*3/4 , Screen.width /4, Screen.width /4), anime2, ScaleMode.ScaleToFit, true, 0);
 			
 
 		}
-
 
 	}
 
