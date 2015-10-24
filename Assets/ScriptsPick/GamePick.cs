@@ -10,27 +10,21 @@ public class GamePick : MonoBehaviour {
 	public Outfit[] cards = new Outfit[3];
 	public Dictionary<string,object>[] cardData;
 	public float screenWidthUnit, screenHeightUnit;
-	public GameObject progress,pick,start,cont,priceTag,tagModel,tagModel2,link,linkModel,green,red,canvas;
+	public GameObject intro,pick,start,cont,board,result, priceTag,tagModel,tagModel2,link,linkModel,green,red,canvas;
 	public AudioSource dealSound, cardSound, stepSound, goalSound,loseSound, bonusSound;
 	public bool chosen;
 	public Vector3 originalPosition ;
-	public int level, goal, step;
+	public int level, goal, step,score,revisit;
 
 
 	void Awake()
 	{
-		level = 3;
-		step = 0;
-
 		AudioSource[] audios = gameObject.GetComponents<AudioSource>();
 		
 		cardSound = audios[0];
 		goalSound = audios[1];
 		loseSound = audios [2];
 		stepSound = audios [3];
-
-		progress = GameObject.Find("Progress");
-		progress.SetActive (false);
 
 		pick = GameObject.Find("Pick");
 		pick.SetActive (false);
@@ -41,11 +35,24 @@ public class GamePick : MonoBehaviour {
 		cont = GameObject.Find("Continue");
 		cont.SetActive (false);
 
+		board = GameObject.Find("Board");
+
+		result = GameObject.Find("Result");
+		result.SetActive (false);
+
+		intro = GameObject.Find("Intro");
+
 		screenHeightUnit = GameObject.FindGameObjectWithTag ("MainCamera").GetComponent<Camera>().orthographicSize * 2.0f; 
 		screenWidthUnit = screenHeightUnit * Screen.width/Screen.height ;
 
 		cardData = new Dictionary<string,object>[4];
 
+		level = PlayerPrefs.GetInt ("level", 1);
+		step = 0;
+		score = PlayerPrefs.GetInt ("score", 0);
+		board.GetComponentInChildren<Text> ().text = "Lvl " + level.ToString() + "   " + "Score " + score.ToString();
+
+		revisit = PlayerPrefs.GetInt ("revisit", 0);
 	}
 
 	void Start()
@@ -54,6 +61,7 @@ public class GamePick : MonoBehaviour {
 	}
 	
 	public void OnStart () {
+		intro.SetActive (false);
 		start.SetActive (false);
 		StartCoroutine (OnDeal());
 	}
@@ -88,16 +96,13 @@ public class GamePick : MonoBehaviour {
 		chosen = false;
 		originalPosition = new Vector3 (0, 0, 0); 
 
-
-
 		foreach (Outfit card in cards) {
 			if(card != null) Object.Destroy(card.picture);
 		}
 		Resources.UnloadUnusedAssets();
 
 		yield return StartCoroutine (DisplayCards());
-		//yield return new WaitForSeconds(3);		
-		//yield return StartCoroutine (OnDeal());
+
 	}
 
 
@@ -112,7 +117,8 @@ public class GamePick : MonoBehaviour {
 		float time1 = Time.time;
 		*/
 		string path;
-		path = "https://i1hm3pvto9.execute-api.us-east-1.amazonaws.com/prod/test";
+		if(revisit == 0 ) path = "https://i1hm3pvto9.execute-api.us-east-1.amazonaws.com/prod/test";
+		else path = "https://i1hm3pvto9.execute-api.us-east-1.amazonaws.com/prod/test";
 		
 		WWW www1 = new WWW (path);
 		yield return www1; 
@@ -239,23 +245,34 @@ public class GamePick : MonoBehaviour {
 			link.AddComponent<LinkBehavior2>() ;
 
 			if(cards[i].price > cards[j].price) j=i;
+
 		}
 
 		if (cards [j].picture == focus) 
 		{
-			StartCoroutine(OnWin ());
+			StartCoroutine(OnWin (j));
 		}
 		else
 		{
-			StartCoroutine(OnLose ());
+			StartCoroutine(OnLose (j));
 		}  
 	}
 
 
-	IEnumerator OnWin()
+	IEnumerator OnWin(int j)
 	{
 		yield return new WaitForSeconds(1f);
+		StartCoroutine(ShakeObject (cards [j].picture));
 		step ++;
+		score = score + goal*10;
+		PlayerPrefs.SetInt("score", score);
+
+	    result.SetActive (true);
+		result.GetComponent<Text> ().text = "Score + " + (goal*10).ToString ();
+
+		cont.SetActive (true);
+		board.GetComponentInChildren<Text> ().text = "Lvl " + level.ToString() + "   " + "Score " + score.ToString();
+
 		GameObject[] lamps;
 		lamps = GameObject.FindGameObjectsWithTag("Respawn");
 		foreach (GameObject go in lamps)
@@ -276,9 +293,13 @@ public class GamePick : MonoBehaviour {
 			obj.transform.SetParent (canvas.transform, false);
 			
 		}
-		if (step == goal) {
+		if (step == goal) 
+		{
 			goalSound.Play ();
 			level ++;
+			result.GetComponent<Text> ().text = "Level Up!";
+			PlayerPrefs.SetInt("level", level);
+			board.GetComponentInChildren<Text> ().text = "Lvl " + level.ToString() + "   " + "Score " + score.ToString();
 			step = 0;
 			
 		} else
@@ -288,12 +309,15 @@ public class GamePick : MonoBehaviour {
 		yield return StartCoroutine (LoadData());
 		
 		cont.SetActive (true);
+		yield return new WaitForSeconds(1f);
+		result.SetActive (false);
 
 	}
 
-	IEnumerator OnLose()
+	IEnumerator OnLose(int j)
 	{
 		yield return new WaitForSeconds(1f);
+		StartCoroutine(ShakeObject (cards [j].picture));
 		step = 0;
 		loseSound.Play ();
 		yield return StartCoroutine (LoadData());
@@ -305,8 +329,27 @@ public class GamePick : MonoBehaviour {
 	{
 		cont.SetActive (false);
 		StartCoroutine (OnDeal());
+		PlayerPrefs.SetInt("revisit", 1);
 	}
 
 
+	
+	IEnumerator ShakeObject(GameObject obj ) 
+	{ 
+		float time = 0, last_time = 0;
+		int i = 1;
+		
+		while (time < 2)
+		{
+			time = time + Time.deltaTime;			
+			if (time - last_time > 0.1) {
+				if(obj != null) obj.transform.position = new Vector3 (obj.transform.position.x, obj.transform.position.y + i * 0.1f,0);
+				i = -i;
+				last_time = time;
+			}
+			yield return null;
+		}
+		if(i == -1 && obj != null) obj.transform.position = new Vector3 (obj.transform.position.x, obj.transform.position.y + i * 0.1f,0);
+	}
 	
 }
