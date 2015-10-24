@@ -3,26 +3,31 @@ using UnityEngine.UI;
 
 using System.Collections;
 using System.Collections.Generic;
-//using System.Linq;
 using MiniJSON;
 
 public class GamePick : MonoBehaviour {
 	
 	public Outfit[] cards = new Outfit[3];
-	public 	Dictionary<string,object>[] cardData;
-
+	public Dictionary<string,object>[] cardData;
 	public float screenWidthUnit, screenHeightUnit;
-
-	public GameObject progress,pick,tagModel,tagModel2,link,linkModel;
-
-	public AudioSource dealSound,cardSound,winSound,loseSound,bonusSound,chipSound,meowSound;
-
+	public GameObject progress,pick,start,cont,priceTag,tagModel,tagModel2,link,linkModel,green,red,canvas;
+	public AudioSource dealSound, cardSound, stepSound, goalSound,loseSound, bonusSound;
 	public bool chosen;
-
 	public Vector3 originalPosition ;
-	
+	public int level, goal, step;
+
+
 	void Awake()
 	{
+		level = 3;
+		step = 0;
+
+		AudioSource[] audios = gameObject.GetComponents<AudioSource>();
+		
+		cardSound = audios[0];
+		goalSound = audios[1];
+		loseSound = audios [2];
+		stepSound = audios [3];
 
 		progress = GameObject.Find("Progress");
 		progress.SetActive (false);
@@ -30,24 +35,60 @@ public class GamePick : MonoBehaviour {
 		pick = GameObject.Find("Pick");
 		pick.SetActive (false);
 
+		start = GameObject.Find("Start");
+		start.SetActive (false);
+
+		cont = GameObject.Find("Continue");
+		cont.SetActive (false);
+
 		screenHeightUnit = GameObject.FindGameObjectWithTag ("MainCamera").GetComponent<Camera>().orthographicSize * 2.0f; 
 		screenWidthUnit = screenHeightUnit * Screen.width/Screen.height ;
 
 		cardData = new Dictionary<string,object>[4];
-			
+
+	}
+
+	void Start()
+	{
+		StartCoroutine (Ready ());	
 	}
 	
-	void Start () {
+	public void OnStart () {
+		start.SetActive (false);
 		StartCoroutine (OnDeal());
 	}
 
+	IEnumerator Ready()
+	{
+		yield return StartCoroutine (LoadData());
+		start.SetActive (true);
+	}
 
 	IEnumerator OnDeal() 
 	{
+		goal = (int)Mathf.Round (Mathf.Log (level, 10)) + 2;
+		
+		//Debug.Log (goal.ToString ());
+		canvas = GameObject.Find("Canvas");
+		
+		for (int i = 0; i<step; i++) 
+		{
+			float distance = i * 55 + 5;
+			GameObject obj = Instantiate (green, new Vector3 (distance, 60, 0), Quaternion.identity) as GameObject;
+			obj.transform.SetParent (canvas.transform, false);
+		}
+		
+		for (int i = step; i<goal; i++) 
+		{
+			float distance = i * 55 + 5;
+			GameObject obj = Instantiate (red, new Vector3 (distance, 60, 0), Quaternion.identity) as GameObject;
+			obj.transform.SetParent (canvas.transform, false);
+		}
+
 		chosen = false;
 		originalPosition = new Vector3 (0, 0, 0); 
 
-		yield return StartCoroutine (LoadData());
+
 
 		foreach (Outfit card in cards) {
 			if(card != null) Object.Destroy(card.picture);
@@ -62,12 +103,14 @@ public class GamePick : MonoBehaviour {
 
 	IEnumerator LoadData()
 	{
+		/*
 		progress.SetActive (true);
 		
 		ProgressBarToolkit.CircularProgressBar2D script = (ProgressBarToolkit.CircularProgressBar2D)progress.GetComponent<ProgressBarToolkit.CircularProgressBar2D>();;
 		script.Init(3);
-		
+
 		float time1 = Time.time;
+		*/
 		string path;
 		path = "https://i1hm3pvto9.execute-api.us-east-1.amazonaws.com/prod/test";
 		
@@ -81,13 +124,14 @@ public class GamePick : MonoBehaviour {
 		{
 			cardData[i] = dataObject[i] as Dictionary<string,object>;
 		}
-		
+
+		/*
 		float time2 = Time.time;
 		float timeDiff = time2 - time1;
 		
 		if(timeDiff < 3) {yield return new WaitForSeconds(3-timeDiff);}
 		progress.SetActive (false);
-		
+		*/
 	}
 
 	IEnumerator DisplayCards()
@@ -99,7 +143,7 @@ public class GamePick : MonoBehaviour {
 			www2 = new WWW(cardData[i]["image"].ToString());
 			yield return www2;
 			
-			//cardSound.Play ();
+			cardSound.Play ();
 			GameObject current = new GameObject();
 			SpriteRenderer renderer =  current.AddComponent<SpriteRenderer>();
 			renderer.sortingOrder = 100;	
@@ -149,12 +193,11 @@ public class GamePick : MonoBehaviour {
 			renderer.sortingOrder = 0;
 		}
 		//Debug.Log (Time.time.ToString());
-		while (Mathf.Abs(obj.transform.localScale.x - scale)>0.0001)  {
-			obj.transform.localScale = Vector3.Lerp (obj.transform.localScale, new Vector3(scale,scale,scale), 0.4f);
+		while (Mathf.Abs(obj.transform.localScale.x - scale)>0.0001) {
+			obj.transform.localScale = Vector3.Lerp (obj.transform.localScale, new Vector3 (scale, scale, scale), 0.4f);
 			obj.transform.position = Vector3.Lerp (obj.transform.position, destination, 0.4f);
 			yield return null;
 		}
-
 		//current.GetComponent<SpriteRenderer> ().sortingOrder = 0;
 		//Debug.Log (Time.time.ToString());
 	}
@@ -175,6 +218,95 @@ public class GamePick : MonoBehaviour {
 		GameObject focus  = GameObject.FindWithTag("Focus");
 		focus.tag = "Untagged";
 		StartCoroutine(Fade(focus,new Vector3 (0, -screenWidthUnit*3.5f/2.5f/5f,0),0.5f));
+		int j = 0;
+		for(int i=0; i<3; i++)
+		{
+			priceTag = Instantiate(tagModel, new Vector3(0, 0, 0), Quaternion.identity) as GameObject;
+			
+			priceTag.transform.parent = cards[i].picture.transform;
+			priceTag.transform.localPosition = new Vector3 (screenWidthUnit/8.0f/0.4f,  screenWidthUnit/8.0f*1.4f/0.4f , 0);
+			priceTag.transform.localScale = new Vector3 (0.05f,0.05f,0.05f);
+			priceTag.GetComponent<Renderer> ().sortingOrder = 100;
+			priceTag.GetComponent<TextMesh> ().text = "<color=#ff0000ff>$" + cards[i].price.ToString()  +"</color>"; 
+			
+			link = Instantiate(linkModel, new Vector3(0, 0, 0), Quaternion.identity) as GameObject;
+			link.transform.parent = cards[i].picture.transform;
+			link.transform.localPosition = new Vector3 (screenWidthUnit/8.0f/0.4f - 0.32f,  screenWidthUnit/8.0f*1.4f/0.4f - 0.9f , 0);
+			link.transform.localScale = new Vector3 (0.5f,0.5f,0.5f);
+			link.GetComponent<Renderer> ().sortingOrder = 1;
+			
+			link.AddComponent<BoxCollider2D>() ;
+			link.AddComponent<LinkBehavior2>() ;
+
+			if(cards[i].price > cards[j].price) j=i;
+		}
+
+		if (cards [j].picture == focus) 
+		{
+			StartCoroutine(OnWin ());
+		}
+		else
+		{
+			StartCoroutine(OnLose ());
+		}  
 	}
+
+
+	IEnumerator OnWin()
+	{
+		yield return new WaitForSeconds(1f);
+		step ++;
+		GameObject[] lamps;
+		lamps = GameObject.FindGameObjectsWithTag("Respawn");
+		foreach (GameObject go in lamps)
+		{
+			Object.Destroy(go);
+		}
+		for (int i = 0; i<step; i++) 
+		{
+			float distance = i * 55 + 5;
+			GameObject obj = Instantiate (green, new Vector3 (distance, 60, 0), Quaternion.identity) as GameObject;
+			obj.transform.SetParent (canvas.transform, false);
+			
+		}
+		for (int i = step; i<goal; i++) 
+		{
+			float distance = i * 55 + 5;
+			GameObject obj = Instantiate (red, new Vector3 (distance, 60, 0), Quaternion.identity) as GameObject;
+			obj.transform.SetParent (canvas.transform, false);
+			
+		}
+		if (step == goal) {
+			goalSound.Play ();
+			level ++;
+			step = 0;
+			
+		} else
+		{
+			stepSound.Play ();
+		}
+		yield return StartCoroutine (LoadData());
+		
+		cont.SetActive (true);
+
+	}
+
+	IEnumerator OnLose()
+	{
+		yield return new WaitForSeconds(1f);
+		step = 0;
+		loseSound.Play ();
+		yield return StartCoroutine (LoadData());
+		
+		cont.SetActive (true);
+	}
+
+	public void OnContinue()
+	{
+		cont.SetActive (false);
+		StartCoroutine (OnDeal());
+	}
+
+
 	
 }
